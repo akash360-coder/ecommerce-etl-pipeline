@@ -1,0 +1,27 @@
+# Keep raw data out of version control; retain the directory placeholder.
+data/raw/
+!data/sample/
+!data/sample/raw/
+
+# Generated real and sample run outputs. Sample source CSVs remain tracked.
+data/processed/*.csv
+data/sample/output/
+dashboard/data/*.csv
+dashboard/data/sales_detail.csv
+
+# Generated SQLite databases and pipeline logs.
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+*.sqlite3
+logs/*.log
+**/logs/*.log
+pipeline_run_summary.json
+
+# Python environments, bytecode, and notebook runtime state.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
