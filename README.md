@@ -1,4 +1,4 @@
-[![CI](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY/actions/workflows/ci.yml)
+[![CI](https://github.com/akash360-coder/ecommerce-etl-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/akash360-coder/ecommerce-etl-pipeline/actions/workflows/ci.yml)
 
 # E-commerce ETL Pipeline
 
@@ -197,7 +197,7 @@ ecommerce-etl/
 
 ## CI Badge Setup
 
-At the top of this README, replace both `YOUR_USERNAME` and `YOUR_REPOSITORY` in the badge image URL and link with your GitHub account name and repository name.
+At the top of this README, replace both `akash360-coder` and `ecommerce-etl-pipeline` in the badge image URL and link with your GitHub account name and repository name.
 
 ## Project Status
 
