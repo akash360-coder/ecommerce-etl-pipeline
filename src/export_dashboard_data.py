@@ -197,6 +197,130 @@ EXPORT_QUERIES: dict[str, str] = {
         JOIN dim_sellers AS s ON s.seller_id = f.seller_id
         ORDER BY f.purchase_timestamp, f.order_id, f.order_item_id
     """,
+    "kpi_summary.csv": """
+        WITH eligible_items AS (
+            SELECT *
+            FROM fact_sales
+            WHERE order_status NOT IN ('canceled', 'unavailable')
+        ), customer_orders AS (
+            SELECT
+                c.customer_unique_id,
+                COUNT(DISTINCT e.order_id) AS order_count
+            FROM eligible_items AS e
+            JOIN dim_customers AS c ON c.customer_id = e.customer_id
+            GROUP BY c.customer_unique_id
+        ), eligible_reviews AS (
+            SELECT DISTINCT r.review_id, r.review_score
+            FROM fact_reviews AS r
+            JOIN eligible_items AS e ON e.order_id = r.order_id
+            WHERE r.review_score IS NOT NULL
+        )
+        SELECT
+            'total_revenue' AS kpi_name,
+            ROUND(SUM(price), 2) AS kpi_value,
+            'BRL' AS kpi_unit
+        FROM eligible_items
+        UNION ALL
+        SELECT 'total_orders', COUNT(DISTINCT order_id), 'orders'
+        FROM eligible_items
+        UNION ALL
+        SELECT 'total_items_sold', COUNT(*), 'items'
+        FROM eligible_items
+        UNION ALL
+        SELECT
+            'average_order_value',
+            ROUND(SUM(price) / NULLIF(COUNT(DISTINCT order_id), 0), 2),
+            'BRL'
+        FROM eligible_items
+        UNION ALL
+        SELECT
+            'unique_customers',
+            COUNT(DISTINCT c.customer_unique_id),
+            'customers'
+        FROM eligible_items AS e
+        JOIN dim_customers AS c ON c.customer_id = e.customer_id
+        UNION ALL
+        SELECT
+            'repeat_customer_rate_pct',
+            ROUND(
+                100.0 * SUM(CASE WHEN order_count > 1 THEN 1 ELSE 0 END)
+                / NULLIF(COUNT(*), 0),
+                2
+            ),
+            'percent'
+        FROM customer_orders
+        UNION ALL
+        SELECT
+            'late_delivery_rate_pct',
+            ROUND(
+                100.0 * SUM(CASE WHEN is_late = 1 THEN 1 ELSE 0 END)
+                / NULLIF(SUM(CASE WHEN is_late IS NOT NULL THEN 1 ELSE 0 END), 0),
+                2
+            ),
+            'percent'
+        FROM eligible_items
+        UNION ALL
+        SELECT 'average_review_score', ROUND(AVG(review_score), 2), 'score'
+        FROM eligible_reviews
+        UNION ALL
+        SELECT
+            'average_delivery_days',
+            ROUND(AVG(delivery_days), 2),
+            'days'
+        FROM eligible_items
+        WHERE delivery_days IS NOT NULL
+    """,
+    "monthly_delivery.csv": """
+        WITH latest AS (
+            SELECT date(MAX(purchase_timestamp), 'start of month') AS latest_month
+            FROM fact_sales
+        ), monthly_sales AS (
+            SELECT
+                strftime('%Y-%m', d.full_date) AS year_month,
+                COUNT(*) AS delivered_items,
+                SUM(CASE WHEN f.is_late = 1 THEN 1 ELSE 0 END) AS late_items,
+                AVG(f.delivery_days) AS average_delivery_days
+            FROM fact_sales AS f
+            JOIN dim_date AS d ON d.date_key = f.purchase_date_key
+            CROSS JOIN latest AS l
+            WHERE f.order_status = 'delivered'
+              AND d.year > 2016
+              AND date(d.full_date, 'start of month') < l.latest_month
+              AND f.is_late IS NOT NULL
+            GROUP BY year_month
+        ), monthly_review_orders AS (
+            SELECT DISTINCT
+                f.order_id,
+                strftime('%Y-%m', d.full_date) AS year_month
+            FROM fact_sales AS f
+            JOIN dim_date AS d ON d.date_key = f.purchase_date_key
+            CROSS JOIN latest AS l
+            WHERE f.order_status = 'delivered'
+              AND d.year > 2016
+              AND date(d.full_date, 'start of month') < l.latest_month
+        ), monthly_reviews AS (
+            SELECT
+                m.year_month,
+                AVG(r.review_score) AS average_review_score
+            FROM monthly_review_orders AS m
+            JOIN fact_reviews AS r ON r.order_id = m.order_id
+              AND r.review_score IS NOT NULL
+            GROUP BY m.year_month
+        )
+        SELECT
+            s.year_month,
+            s.delivered_items,
+            s.late_items,
+            ROUND(
+                100.0 * s.late_items / NULLIF(s.delivered_items, 0),
+                2
+            ) AS late_delivery_rate_pct,
+            ROUND(s.average_delivery_days, 2) AS average_delivery_days,
+            ROUND(r.average_review_score, 2) AS average_review_score
+        FROM monthly_sales AS s
+        LEFT JOIN monthly_reviews AS r ON r.year_month = s.year_month
+        ORDER BY s.year_month
+    """,
 }
 
 

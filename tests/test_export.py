@@ -130,6 +130,14 @@ def test_exports_exclude_canceled_revenue_and_apply_thresholds(
     reviews = pd.read_csv(tmp_path / "review_summary.csv")
     category_rows = reviews.loc[reviews["summary_type"] == "category_average"]
     assert category_rows["category"].tolist() == ["Alpha"]
+    kpis = pd.read_csv(tmp_path / "kpi_summary.csv")
+    kpi_values = dict(zip(kpis["kpi_name"], kpis["kpi_value"]))
+    assert kpi_values["total_revenue"] == pytest.approx(134)
+    assert kpi_values["total_orders"] == pytest.approx(4)
+    assert kpi_values["total_items_sold"] == pytest.approx(4)
+    monthly_delivery = pd.read_csv(tmp_path / "monthly_delivery.csv")
+    assert monthly_delivery["year_month"].tolist() == ["2017-01"]
+    assert monthly_delivery["delivered_items"].item() == 3
 
 
 def test_exports_have_expected_csv_columns(
@@ -137,7 +145,7 @@ def test_exports_have_expected_csv_columns(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """All seven export files use documented, stable column names."""
+    """All export files use documented, stable column names."""
     monkeypatch.setattr(export_dashboard_data, "MIN_DELIVERED_ITEMS_PER_STATE", 1)
     monkeypatch.setattr(export_dashboard_data, "MIN_REVIEWS_PER_CATEGORY", 1)
 
@@ -151,6 +159,8 @@ def test_exports_have_expected_csv_columns(
         "review_summary.csv": ["summary_type", "review_score", "category", "review_count", "average_review_score", "share_pct"],
         "payment_mix.csv": ["payment_type", "payment_value", "payment_share_pct"],
         "sales_detail.csv": ["order_id", "order_item_id", "purchase_date_key", "purchase_timestamp", "order_status", "customer_id", "customer_unique_id", "customer_state", "product_id", "product_category_name", "category", "seller_id", "seller_state", "price", "freight_value", "total_item_value", "revenue", "revenue_eligible", "delivery_days", "delivery_delay_days", "is_late"],
+        "kpi_summary.csv": ["kpi_name", "kpi_value", "kpi_unit"],
+        "monthly_delivery.csv": ["year_month", "delivered_items", "late_items", "late_delivery_rate_pct", "average_delivery_days", "average_review_score"],
     }
     for filename, columns in expected_columns.items():
         exported = pd.read_csv(tmp_path / filename)

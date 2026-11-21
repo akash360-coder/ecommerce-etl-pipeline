@@ -197,7 +197,15 @@ ecommerce-etl/
 
 ## CI Badge Setup
 
-At the top of this README, replace both `akash360-coder` and `ecommerce-etl-pipeline` in the badge image URL and link with your GitHub account name and repository name.
+The CI badge at the top of this README is already configured for this repository.
+
+## Dashboard
+
+![Dashboard overview screenshot](docs/images/dashboard_overview.png)
+
+**Live dashboard:** [Add Power BI or Tableau Public link here](https://example.com/dashboard)
+
+See [Dashboard build specification](docs/dashboard_spec.md) and [dashboard data documentation](dashboard/README.md).
 
 ## Project Status
 
